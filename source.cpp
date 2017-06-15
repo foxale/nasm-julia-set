@@ -1,37 +1,110 @@
-#include "SDL2/SDL.h"
+/*This source code copyrighted by Lazy Foo' Productions (2004-2015)
+and may not be redistributed without written permission.*/
+
+//Using SDL, standard IO, and strings
+#include <SDL2/SDL.h>
 #include <stdio.h>
+#include <string>
+#include <iostream>
 
-int main(int argc, char* argv[]) {
 
-    SDL_Window *window;                    // Declare a pointer
+//Screen dimension constants
+const int SCREEN_WIDTH = 500;
+const int SCREEN_HEIGHT = 10;
 
-    SDL_Init(SDL_INIT_VIDEO);              // Initialize SDL2
+//Starts up SDL and creates window
+bool init();
 
-    // Create an application window with the following settings:
-    window = SDL_CreateWindow(
-        "An SDL2 window",                  // window title
-        SDL_WINDOWPOS_UNDEFINED,           // initial x position
-        SDL_WINDOWPOS_UNDEFINED,           // initial y position
-        640,                               // width, in pixels
-        480,                               // height, in pixels
-        SDL_WINDOW_OPENGL                  // flags - see below
-    );
+//Frees media and shuts down SDL
+void close();
 
-    // Check that the window was successfully created
-    if (window == NULL) {
-        // In the case that the window could not be made...
-        printf("Could not create window: %s\n", SDL_GetError());
-        return 1;
-    }
 
-    // The window is open: could enter program loop here (see SDL_PollEvent())
+SDL_Window* gWindow = NULL;
 
-    SDL_Delay(3000);  // Pause execution for 3000 milliseconds, for example
 
-    // Close and destroy the window
-    SDL_DestroyWindow(window);
+bool init()
+{
+	//Initialization flag
+	bool success = true;
 
-    // Clean up
-    SDL_Quit();
-    return 0;
+	//Initialize SDL
+	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+	{
+		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
+		success = false;
+	}
+	else
+	{
+		//Create window
+		gWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+		if( gWindow == NULL )
+		{
+			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
+			success = false;
+		}
+	}
+
+	return success;
+}
+
+
+void close()
+{
+
+	SDL_DestroyWindow( gWindow );
+	gWindow = NULL;
+
+	SDL_Quit();
+}
+
+
+int main( int argc, char* args[] )
+{
+	//Start up SDL and create window
+	if( !init() )
+	{
+		printf( "Failed to initialize!\n" );
+	}
+	else
+	{
+			//Main loop flag
+			bool quit = false;
+
+			//Event handler
+			SDL_Event e;
+
+			//While application is running
+			
+			SDL_Renderer * renderer = SDL_CreateRenderer(gWindow, -1, 0);
+			SDL_Texture * texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
+			Uint8 * pixels = new Uint8[  3 * SCREEN_WIDTH * SCREEN_HEIGHT];
+			memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
+			int i = 0;	
+			while( !quit )
+			{
+				//Handle events on queue
+				while( SDL_PollEvent( &e ) != 0 )
+				{
+					//User requests quit
+					if( e.type == SDL_QUIT )
+					{
+						quit = true;
+					}
+				}
+				
+				memset(pixels, i, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
+				SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
+				SDL_RenderClear(renderer);
+				SDL_RenderCopy(renderer, texture, NULL, NULL);
+				SDL_RenderPresent(renderer);
+				i=++i%256;
+				SDL_Delay(10);
+			}
+			delete[] pixels;
+			SDL_DestroyTexture(texture);
+			SDL_DestroyRenderer(renderer);	
+	}
+	close();
+
+	return 0;
 }
