@@ -9,8 +9,14 @@ and may not be redistributed without written permission.*/
 
 
 //Screen dimension constants
-const int SCREEN_WIDTH = 500;
-const int SCREEN_HEIGHT = 10;
+const int SCREEN_WIDTH = 640;
+const int SCREEN_HEIGHT = 320;
+
+Uint32 rmask = 0x00ff0000;
+Uint32 gmask = 0x0000ff00;
+Uint32 bmask = 0x000000ff;
+int depth = 24;
+int pitch = 3*SCREEN_WIDTH;
 
 //Starts up SDL and creates window
 bool init();
@@ -76,9 +82,15 @@ int main( int argc, char* args[] )
 			//While application is running
 			
 			SDL_Renderer * renderer = SDL_CreateRenderer(gWindow, -1, 0);
-			SDL_Texture * texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
-			Uint8 * pixels = new Uint8[  3 * SCREEN_WIDTH * SCREEN_HEIGHT];
-			memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
+			//SDL_Texture * texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
+			Uint8 * pixels = new Uint8[3 * SCREEN_WIDTH * SCREEN_HEIGHT];
+			
+			//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
+			SDL_Surface * surf = NULL;
+			SDL_Texture * texture = NULL;
+			
+			
+			
 			int i = 0;	
 			while( !quit )
 			{
@@ -92,14 +104,28 @@ int main( int argc, char* args[] )
 					}
 				}
 				
-				memset(pixels, i, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
-				SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
+				memset(pixels, i, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(Uint8) * 3); 
+				//SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
+				//TO DO: update surface -> update texture
+				
+				SDL_Surface *surf = SDL_CreateRGBSurfaceFrom((void*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, depth, pitch, rmask, gmask, bmask, 0);			
+				if (surf == NULL)
+				{
+					fprintf(stderr, "CreateRGBSurface failed: %s\n", SDL_GetError());
+					SDL_Log("SDL_CreateRGBSurface() failed: %s", SDL_GetError());
+					exit(1);
+				}
+				
+				texture = SDL_CreateTextureFromSurface(renderer, surf);
+				
 				SDL_RenderClear(renderer);
 				SDL_RenderCopy(renderer, texture, NULL, NULL);
 				SDL_RenderPresent(renderer);
+				
 				i=++i%256;
 				SDL_Delay(10);
 			}
+			SDL_FreeSurface(surf);
 			delete[] pixels;
 			SDL_DestroyTexture(texture);
 			SDL_DestroyRenderer(renderer);	
