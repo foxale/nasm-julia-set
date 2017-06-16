@@ -9,9 +9,10 @@ and may not be redistributed without written permission.*/
 #include <complex>
 #include <cmath>
 
+using namespace std;
 //Screen dimension constants
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 800;
+const int SCREEN_WIDTH = 1080;
+const int SCREEN_HEIGHT = 720;
 
 Uint32 rmask = 0x0000ff;
 Uint32 gmask = 0x00ff00;
@@ -74,53 +75,45 @@ int main( int argc, char* args[] )
 	}
 	else
 	{
-			//Main loop flag
 			bool quit = false;
 
-			//Event handler
 			SDL_Event e;
 
 			//While application is running
 			
 			SDL_Renderer * renderer = SDL_CreateRenderer(gWindow, -1, 0);
-			//SDL_Texture * texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
 			Uint8 * pixels = new Uint8[3 * SCREEN_WIDTH * SCREEN_HEIGHT];
-			
-			//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
 			SDL_Surface * surf = NULL;
 			SDL_Texture * texture = NULL;
+			//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
+			
 			
 		
-			std::complex<double> old_complex, new_complex;
-			std::complex<double> c(-0.835 -0.232i);
-			px_offset
-			int limit = 50;
+			complex<double> z;
+			complex<double> c(-0.835 -0.232i);
+			double zoom = 1.0;
+			int iterationsLimit = 40;
+			
 			for(int y = 0; y < SCREEN_HEIGHT; y++)
 			{
 				for(int x = 0; x < SCREEN_WIDTH; x++)
-				{ // bedzie sie zle skalowalo dla innych proporcji ekranu niz 1:1
-					std::complex<double> z( 
-			;			 
-			;			
-			;		);
+				{
 					//double coordx = -1.5 + (double)x/SCREEN_WIDTH * 3;
-					double coordx = 1.0 * (x - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2) / Height * 4.0 * zoom - 2.0 * zoom,
+					double coordx = 1.0 * (x - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2 ) / SCREEN_HEIGHT * 4.0 * zoom - 2.0 * zoom;
 					//double coordy = 1.5 - (double)y/SCREEN_HEIGHT * 3;
-					double coordy = 1.0 * (y + px_offset.y) / Height * 4.0 * zoom - 2.0 * zoom
-					old_complex = {coordx,coordy};
-					int i;
-					//std::cout << "next pixel" << std::endl; 
-					for(i = 0; i < limit; i++)
+					double coordy = -1.0 * y / SCREEN_HEIGHT * 4.0 * zoom + 2.0 * zoom;
+					z = {coordx,coordy};
+					//std::cout << "next pixel" << std::endl;
+					int n;
+					for(n = 0; n < iterationsLimit; n++)
 					{
-						//std::cout << "x " << old_complex << std::endl; 
-						new_complex = std::pow(old_complex, 2) + c;
-						old_complex = new_complex;
-						if(std::abs(old_complex) > 2)
+						z = pow(z, 2) + c;
+						if(abs(z) > 2)
 							break;
 					}
-					Uint8 red = i*255/limit % 256;
+					Uint8 red = n*255/iterationsLimit % 256;
 					Uint8 green = 0;
-					Uint8 blue = 255 * (i >= limit);
+					Uint8 blue = 255 * (n >= iterationsLimit);
 					pixels[(y*SCREEN_WIDTH + x)*3] = red;
 					pixels[(y*SCREEN_WIDTH + x)*3+1] = green;
 					pixels[(y*SCREEN_WIDTH + x)*3+2] = blue;
