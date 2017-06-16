@@ -6,15 +6,16 @@ and may not be redistributed without written permission.*/
 #include <stdio.h>
 #include <string>
 #include <iostream>
-
+#include <complex>
+#include <cmath>
 
 //Screen dimension constants
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 320;
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 800;
 
-Uint32 rmask = 0x00ff0000;
-Uint32 gmask = 0x0000ff00;
-Uint32 bmask = 0x000000ff;
+Uint32 rmask = 0x0000ff;
+Uint32 gmask = 0x00ff00;
+Uint32 bmask = 0xff0000;
 int depth = 24;
 int pitch = 3*SCREEN_WIDTH;
 
@@ -89,7 +90,43 @@ int main( int argc, char* args[] )
 			SDL_Surface * surf = NULL;
 			SDL_Texture * texture = NULL;
 			
-			
+		
+			std::complex<double> old_complex, new_complex;
+			std::complex<double> c(-0.835 -0.232i);
+			px_offset
+			int limit = 50;
+			for(int y = 0; y < SCREEN_HEIGHT; y++)
+			{
+				for(int x = 0; x < SCREEN_WIDTH; x++)
+				{ // bedzie sie zle skalowalo dla innych proporcji ekranu niz 1:1
+					std::complex<double> z( 
+			;			 
+			;			
+			;		);
+					//double coordx = -1.5 + (double)x/SCREEN_WIDTH * 3;
+					double coordx = 1.0 * (x - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2) / Height * 4.0 * zoom - 2.0 * zoom,
+					//double coordy = 1.5 - (double)y/SCREEN_HEIGHT * 3;
+					double coordy = 1.0 * (y + px_offset.y) / Height * 4.0 * zoom - 2.0 * zoom
+					old_complex = {coordx,coordy};
+					int i;
+					//std::cout << "next pixel" << std::endl; 
+					for(i = 0; i < limit; i++)
+					{
+						//std::cout << "x " << old_complex << std::endl; 
+						new_complex = std::pow(old_complex, 2) + c;
+						old_complex = new_complex;
+						if(std::abs(old_complex) > 2)
+							break;
+					}
+					Uint8 red = i*255/limit % 256;
+					Uint8 green = 0;
+					Uint8 blue = 255 * (i >= limit);
+					pixels[(y*SCREEN_WIDTH + x)*3] = red;
+					pixels[(y*SCREEN_WIDTH + x)*3+1] = green;
+					pixels[(y*SCREEN_WIDTH + x)*3+2] = blue;
+					 
+				}
+			}
 			
 			int i = 0;	
 			while( !quit )
@@ -103,8 +140,7 @@ int main( int argc, char* args[] )
 						quit = true;
 					}
 				}
-				
-				memset(pixels, i, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(Uint8) * 3); 
+					
 				//SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
 				//TO DO: update surface -> update texture
 				
@@ -123,7 +159,8 @@ int main( int argc, char* args[] )
 				SDL_RenderPresent(renderer);
 				
 				i=++i%256;
-				SDL_Delay(10);
+				SDL_Delay(5000);
+				break;
 			}
 			SDL_FreeSurface(surf);
 			delete[] pixels;
