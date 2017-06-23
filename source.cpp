@@ -75,36 +75,73 @@ int main( int argc, char* args[] )
 	}
 	else
 	{
-			bool quit = false;
+		bool quit = false, update = true;
+		double zoom = 1.0, mouseposx = SCREEN_WIDTH/2, mouseposy=SCREEN_HEIGHT/2;
+		SDL_Event event;
+				
+		SDL_Renderer * renderer = SDL_CreateRenderer(gWindow, -1, 0);
+		Uint8 * pixels = new Uint8[3 * SCREEN_WIDTH * SCREEN_HEIGHT];
+		SDL_Surface * surf = NULL;
+		SDL_Texture * texture = NULL;
+		//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
+		double x_offset = 0, y_offset = 0;
 
-			SDL_Event e;
+		while( !quit )
+		{
+			//Handle events on queue
+			while( SDL_PollEvent( &event ) != 0 )
+			{
+				//User requests quit
+				if( event.type == SDL_QUIT )
+				{
+					quit = true;
+				}
+				if( event.type == SDL_MOUSEBUTTONDOWN )
+				{
+					mouseposx = event.button.x;
+					mouseposy = event.button.y;
+					x_offset += (mouseposx - SCREEN_WIDTH/2)*zoom;
+					y_offset += (mouseposy - SCREEN_HEIGHT/2)*zoom;
+					
+					cout << "x_mouse: " << mouseposx - SCREEN_WIDTH/2 << " y_mouse: " << mouseposy - SCREEN_HEIGHT/2 << endl;
+			
+					cout << "x_off: " << x_offset << " y_off: " << y_offset << endl;
+				
+					if( event.button.button == SDL_BUTTON_LEFT )
+						zoom /= 1.2;
+					else 
+						zoom *= 1.2;
+				
+					update = true;
+					//SDL_FlushEvents(SDL_QUIT, SDL_LASTEVENT);
+				}
+					
+			}
+			if(!update)
+			{
+				SDL_RenderPresent(renderer);
+				continue;
+			}
+			cout << "Calc start" << endl;
+			
 
-			//While application is running
 			
-			SDL_Renderer * renderer = SDL_CreateRenderer(gWindow, -1, 0);
-			Uint8 * pixels = new Uint8[3 * SCREEN_WIDTH * SCREEN_HEIGHT];
-			SDL_Surface * surf = NULL;
-			SDL_Texture * texture = NULL;
-			//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
-			
-			
-		
+			cout << "x_off: " << x_offset << " y_off: " << y_offset << endl;
 			complex<double> z;
 			complex<double> c(-0.835 -0.232i);
-			double zoom = 1.0;
-			int iterationsLimit = 40;
+		
+			int n, iterationsLimit = 40;
 			
 			for(int y = 0; y < SCREEN_HEIGHT; y++)
 			{
 				for(int x = 0; x < SCREEN_WIDTH; x++)
 				{
 					//double coordx = -1.5 + (double)x/SCREEN_WIDTH * 3;
-					double coordx = 1.0 * (x - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2 ) / SCREEN_HEIGHT * 4.0 * zoom - 2.0 * zoom;
+					double coordx = 1.0 * (x + x_offset/zoom - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2) / SCREEN_HEIGHT * 4.0 * zoom - 2.0 * zoom;
 					//double coordy = 1.5 - (double)y/SCREEN_HEIGHT * 3;
-					double coordy = -1.0 * y / SCREEN_HEIGHT * 4.0 * zoom + 2.0 * zoom;
+					double coordy = -1.0 * (y + y_offset/zoom)/ SCREEN_HEIGHT * 4.0 * zoom + 2.0 * zoom;
 					z = {coordx,coordy};
 					//std::cout << "next pixel" << std::endl;
-					int n;
 					for(n = 0; n < iterationsLimit; n++)
 					{
 						z = pow(z, 2) + c;
@@ -120,47 +157,36 @@ int main( int argc, char* args[] )
 					 
 				}
 			}
-			
-			int i = 0;	
-			while( !quit )
+			//SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
+			//TO DO: update surface -> update texture
+			cout << "Calc end" << endl;
+			SDL_Surface *surf = SDL_CreateRGBSurfaceFrom((void*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, depth, pitch, rmask, gmask, bmask, 0);			
+			if (surf == NULL)
 			{
-				//Handle events on queue
-				while( SDL_PollEvent( &e ) != 0 )
-				{
-					//User requests quit
-					if( e.type == SDL_QUIT )
-					{
-						quit = true;
-					}
-				}
-					
-				//SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
-				//TO DO: update surface -> update texture
-				
-				SDL_Surface *surf = SDL_CreateRGBSurfaceFrom((void*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, depth, pitch, rmask, gmask, bmask, 0);			
-				if (surf == NULL)
-				{
-					fprintf(stderr, "CreateRGBSurface failed: %s\n", SDL_GetError());
-					SDL_Log("SDL_CreateRGBSurface() failed: %s", SDL_GetError());
-					exit(1);
-				}
-				
-				texture = SDL_CreateTextureFromSurface(renderer, surf);
-				
-				SDL_RenderClear(renderer);
-				SDL_RenderCopy(renderer, texture, NULL, NULL);
-				SDL_RenderPresent(renderer);
-				
-				i=++i%256;
-				SDL_Delay(5000);
-				break;
+				fprintf(stderr, "CreateRGBSurface failed: %s\n", SDL_GetError());
+				SDL_Log("SDL_CreateRGBSurface() failed: %s", SDL_GetError());
+				exit(1);
 			}
-			SDL_FreeSurface(surf);
-			delete[] pixels;
-			SDL_DestroyTexture(texture);
-			SDL_DestroyRenderer(renderer);	
+			
+			texture = SDL_CreateTextureFromSurface(renderer, surf);
+			
+			SDL_RenderClear(renderer);
+			SDL_RenderCopy(renderer, texture, NULL, NULL);
+			
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+            SDL_RenderDrawLine(renderer, 0, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/2);
+            SDL_RenderDrawLine(renderer, SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
+			SDL_RenderPresent(renderer);
+			update = false;
+			
+		}
+		SDL_FreeSurface(surf);
+		delete[] pixels;
+		SDL_DestroyTexture(texture);
+		SDL_DestroyRenderer(renderer);	
 	}
 	close();
 
 	return 0;
 }
+	
