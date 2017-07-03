@@ -25,29 +25,29 @@ asmfunc:
 	mov r13, 4
 	cvtsi2sd xmm10, r13
 	
-	mov r10, -1
+	mov r11, -1
 	
 y_loop:
 	; r10 - x counter
 	; r11 - y counter
 	
 	; for (int y = 0; y < Height; ++y)
-	add r10, 1
-	cmp r10, rdx
+	add r11, 1
+	cmp r11, rdx
 	je end
 	
-	mov r11, -1
+	mov r10, -1
 	
 x_loop:
 
 	;for (int x = 0; x < Width; ++x)
-	add r11, 1
-	cmp r11, rsi
+	add r10, 1
+	cmp r10, rsi
 	je y_loop
 
 def_z:
 	; r12 = x - (width - height) / 2 
-	mov r12, r11
+	mov r12, r10
 	sub r12, r9
 	; xmm5 = (x - (width - height) / 2 + x_offset/zoom ) / height
 	cvtsi2sd xmm5, r12
@@ -61,7 +61,7 @@ def_z:
 	
 	
 	; xmm8 = y + y_offset/zoom
-	cvtsi2sd xmm8, r10
+	cvtsi2sd xmm8, r11
 	addsd xmm8, xmm4
 	; xmm8 = ( y + y_offset/zoom ) / height * 4.0
 	divsd xmm8, xmm6
@@ -71,8 +71,9 @@ def_z:
 	subsd xmm7, xmm8
 	mulsd xmm7, xmm2
 
+	movsd xmm8, xmm7
 	; z.real() is in xmm5
-	; z.imag() is in xmm7
+	; z.imag() is in xmm8
 	
 	mov r12, -1
 	
@@ -82,8 +83,8 @@ julia_iteration:
 	je colorPixel
 	
 	; Im(z*z+c) is in xmm8
-	movsd xmm8, xmm5
-	mulsd xmm8, xmm7
+	movsd xmm7, xmm8
+	mulsd xmm8, xmm5
 	mulsd xmm8, xmm9
 	addsd xmm8, xmm1
 	
@@ -97,34 +98,35 @@ julia_iteration:
 	movsd xmm7, xmm8
 	mulsd xmm7, xmm7
 	movsd xmm11, xmm5
-	mulsd xmm5, xmm5
-	addsd xmm7, xmm5
-	
+	mulsd xmm11, xmm11
+	addsd xmm7, xmm11
 	
 	comisd xmm7, xmm10
 	jb julia_iteration
 	
-
-
 colorPixel:
+	; n in r12
+	; &palette in r13
 	mov r13, r8
 	imul r12, 3
 	
 	add r13, r12
-	mov [rdi], r13
+	mov r14b, [r13]
+	mov [rdi], r14b
 	
 	add r13, 1
-	add rdi, 2
-	mov [rdi], r13
+	add rdi, 1
+	mov r14b, [r13]
+	mov [rdi], r14b
 	
 	add r13, 1
-	add rdi, 2
-	mov [rdi], r13 
+	add rdi, 1
+	mov r14b, [r13]
+	mov [rdi], r14b
 	
-	add rdi, 2
+	add rdi, 1
 	
 	jmp x_loop
-
 
 end:
 	pop rbp

@@ -20,6 +20,8 @@ Uint32 bmask = 0xff0000;
 int depth = 24;
 int pitch = 3*SCREEN_WIDTH;
 
+int iterationsLimit = 32;
+
 //Starts up SDL and creates window
 bool init();
  
@@ -88,8 +90,8 @@ int main( int argc, char* args[] )
 		//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
 		double x_offset = 0, y_offset = 0;
 		
-		int palette[32*3];
-		for(int i=0; i < 32; i++)
+		Uint8 * palette = new Uint8[iterationsLimit*3];
+		for(int i=0; i < iterationsLimit; i++)
 		{
 			palette[3*i+0] = (8*i)/(double)255;
 			palette[3*i+1] = (128-4*i)/(double)255;
@@ -140,16 +142,17 @@ int main( int argc, char* args[] )
 			complex<double> z;
 			complex<double> c(-0.835 -0.232i);
 		
-			int n, iterationsLimit = 40;
+			int n;
 			
 			cout << (int*)pixels << " <- pizels | palette -> " << &palette << endl;
 			int x = 0, y = 0;
 			cout <<  1.0 * (x + x_offset/zoom - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2) / SCREEN_HEIGHT * 4.0 * zoom - 2.0 * zoom << endl;
 			cout << -1.0 * (y + y_offset/zoom)/ SCREEN_HEIGHT * 4.0 * zoom + 2.0 * zoom << endl;
 			//asmfunc(c.real(), c.imag(), zoom, (int*)pixels, SCREE, 55, 66, palette, x_offset/zoom, y_offset/zoom);
-			asmfunc(c.real(), c.imag(), zoom, (int*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, iterationsLimit, palette, x_offset/zoom, y_offset/zoom);
+			asmfunc(c.real(), c.imag(), zoom, (int*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, iterationsLimit, (int*)palette, x_offset/zoom, y_offset/zoom);
+			
 			/*
-			for(int y = 0; y < SCREEN_HEIGHT; y++)
+			 * for(int y = 0; y < SCREEN_HEIGHT; y++)
 			{
 				for(int x = 0; x < SCREEN_WIDTH; x++)
 				{
@@ -162,18 +165,28 @@ int main( int argc, char* args[] )
 					for(n = 0; n < iterationsLimit; n++)
 					{
 						z = pow(z, 2) + c;
+						if(n == 0 && x == 540 && y == 360)
+							cout << n << " <- n | z-> " << z.real() << " " << z.imag() << endl;
+				
 						if(abs(z) > 2)
 							break;
 					}
-					Uint8 red = n*255/iterationsLimit % 256;
-					Uint8 green = 0;
-					Uint8 blue = 255 * (n >= iterationsLimit);
-					pixels[(y*SCREEN_WIDTH + x)*3] = red;
-					pixels[(y*SCREEN_WIDTH + x)*3+1] = green;
-					pixels[(y*SCREEN_WIDTH + x)*3+2] = blue;
-					 
+					
+					//Uint8 red = n*255/iterationsLimit % 256;
+					//Uint8 green = 0;
+					//Uint8 blue = 255 * (n >= iterationsLimit);
+					//pixels[(y*SCREEN_WIDTH + x)*3] = red;
+					//pixels[(y*SCREEN_WIDTH + x)*3+1] = green;
+					//pixels[(y*SCREEN_WIDTH + x)*3+2] = blue;
+					
+					pixels[(y*SCREEN_WIDTH + x)*3] = palette[3*n+0];
+					pixels[(y*SCREEN_WIDTH + x)*3+1] = palette[3*n+1];
+					pixels[(y*SCREEN_WIDTH + x)*3+2] = palette[3*n+2];
+					if(x == 540 && y == 360)
+						cout << n << " <- n | rgb -> " << (int*)pixels[(y*SCREEN_WIDTH + x)*3] << " " << (int*)pixels[(y*SCREEN_WIDTH + x)*3] << " " << (int*)pixels[(y*SCREEN_WIDTH + x)*3] << " " << endl;
 				}
-			}*/
+			}
+			*/
 			
 			//SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
 			//TO DO: update surface -> update texture
