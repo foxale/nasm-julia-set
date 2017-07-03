@@ -1,199 +1,131 @@
 ;nasm_loop.asm
-
-section .data
+;asmfunc(double c_x, double c_y, double zoom, U32* pixels, int width, int height, int limit, int * palette, int x_offset/zoom, int y_offset/zoom)
+;	 		XMM0	    XMM1	      XMM2	      RDI	  		RSI       RDX  	    RCX		    	R8				 XMM3 		XMM4			
+;arguments in RDI, RSI, RDX, RCX, R8, and R9
+; R9 - W-H / 2
+; R10 - x, R11 - y;
 
 section .text
-
 global asmfunc
-extern Width, Height
-extern zoom
-extern PaletteSize
-extern C_X, C_Y
-extern pixels
-extern palette
+
 
 asmfunc:
 	push rbp
-	mov rbp, rsp
-	push rax
-	push rbx
-	push rcx
-	push rdx
+	mov rbp, rsp	
 	
-	xor rax, rax
-	xor rbx, rbx
-	xor rcx, rcx
-	xor rdx, rdx
+	mov r9, rsi
+	sub r9, rdx
+	sar r9, 1
 	
-	mov r9, [pixels]
-	mov r10, [palette]
+	cvtsi2sd xmm6, rdx
 	
-	;resolution_offset 
-	mov ecx, [Width]
-	sub ecx, [Height]
-	sar ecx, 1
+	mov r13, 2
+	cvtsi2sd xmm9, r13
 	
-	mov bx, -1;442 ; y
-
-out_loop:
-	mov ax, -1 ;608 ; x
+	mov r13, 4
+	cvtsi2sd xmm10, r13
 	
-	add bx, 1
+	mov r10, -1
+	
+y_loop:
+	; r10 - x counter
+	; r11 - y counter
 	
 	; for (int y = 0; y < Height; ++y)
-	cmp bx, [Height]
+	add r10, 1
+	cmp r10, rdx
 	je end
 	
-in_loop:
-	add ax, 1
+	mov r11, -1
 	
+x_loop:
+
 	;for (int x = 0; x < Width; ++x)
-	cmp ax, [Width]
-	je out_loop
-	
-	
+	add r11, 1
+	cmp r11, rsi
+	je y_loop
+
 def_z:
-	cvtsi2sd xmm2, eax
-	cvtsi2sd xmm3, ecx
-	
-	subsd 	 xmm2, xmm3
-	addsd	 xmm2, xmm0
-	movsx 	 r10, dword [Height]
-	cvtsi2sd xmm10, r10
-	divsd	 xmm2,  xmm10
-	mov		 r8,   4
-	cvtsi2sd xmm3, r8
-	mulsd	 xmm2, xmm3
-	mov		 r8,   2
-	cvtsi2sd xmm3, r8
-	subsd	 xmm2, xmm3
-	movsd	 xmm3, [zoom]
-	mulsd	 xmm2, xmm3
+	; r12 = x - (width - height) / 2 
+	mov r12, r11
+	sub r12, r9
+	; xmm5 = (x - (width - height) / 2 + x_offset/zoom ) / height
+	cvtsi2sd xmm5, r12
+	addsd xmm5, xmm3
+	divsd xmm5, xmm6
+	; xmm5 = (x - (width - height) / 2 + x_offset/zoom ) / height * 4.0
+	mulsd xmm5, xmm10
+	; xmm5 = ((x - (width - height) / 2 + x_offset/zoom ) / height * 4.0 - 2.0 ) * zoom
+	subsd xmm5, xmm9
+	mulsd xmm5, xmm2
 	
 	
-	cvtsi2sd xmm3, ebx
-	addsd	 xmm3, xmm1
-	divsd	 xmm3, xmm10
-	mov		 r8,   4
-	cvtsi2sd xmm4, r8
-	mulsd	 xmm3, xmm4
-	mov		 r8,   2
-	cvtsi2sd xmm4, r8
-	subsd	 xmm3, xmm4
-	movsd	 xmm4, [zoom]
-	mulsd	 xmm3, xmm4
+	; xmm8 = y + y_offset/zoom
+	cvtsi2sd xmm8, r10
+	addsd xmm8, xmm4
+	; xmm8 = ( y + y_offset/zoom ) / height * 4.0
+	divsd xmm8, xmm6
+	mulsd xmm8, xmm10
+	; xmm7 = (2.0 - ( y + y_offset/zoom ) / height * 4.0 ) * zoom
+	movsd xmm7, xmm9
+	subsd xmm7, xmm8
+	mulsd xmm7, xmm2
+
+	; z.real() is in xmm5
+	; z.imag() is in xmm7
 	
-	;xmm2 - real, xmm3 - imag
+	mov r12, -1
 	
-	mov dx, -1
+julia_iteration:
+	add r12, 1
+	cmp r12, rcx
+	je colorPixel
+	
+	; Im(z*z+c) is in xmm8
+	movsd xmm8, xmm5
+	mulsd xmm8, xmm7
+	mulsd xmm8, xmm9
+	addsd xmm8, xmm1
+	
+	; Re(z*z+c) is in xmm5
+	mulsd xmm7, xmm7
+	mulsd xmm5, xmm5
+	subsd xmm5, xmm7
+	addsd xmm5, xmm0
+	
+	; Re^2 + Im^2 is in xmm7
+	movsd xmm7, xmm8
+	mulsd xmm7, xmm7
+	movsd xmm11, xmm5
+	mulsd xmm5, xmm5
+	addsd xmm7, xmm5
 	
 	
-cnt_loop:
-	add dx, 1	;cnt 
-	cmp dx, [PaletteSize]
-	je colorPixels
-	
-	movsd xmm4, xmm2
-	mulsd xmm4, xmm3
-	
-	mov		 r8,   2
-	cvtsi2sd xmm5, r8
-	mulsd	 xmm4, xmm5
-	
-	mulsd xmm2, xmm2
-	mulsd xmm3, xmm3
-	subsd xmm2, xmm3
-	movsd xmm3, xmm4
-	;Rex = xmm2, Imz = xmm3
-	
-	movsd	 xmm5, [C_X]
-	movsd	 xmm6, [C_Y]
+	comisd xmm7, xmm10
+	jb julia_iteration
 	
 
-	
-	addsd	 xmm2, xmm5
-	addsd	 xmm3, xmm6
-	;after z = z*z + c
-	
-	movsd	xmm5, xmm2
-	movsd  	xmm6, xmm3
-	mulsd	xmm5, xmm5
-	mulsd  	xmm6, xmm6
-	addsd	xmm5, xmm6
-	sqrtsd	xmm5, xmm5
-	
-	mov r8, 2
-	cvtsi2sd xmm6, r8
-	
-	comisd xmm5, xmm6
-	jb cnt_loop
-	
-	
-colorPixels:
-	
-	;cvtsd2si r8, xmm5
-	;mov [r9], r8
-	
-	;mov [r9], dx
-	mov r10, [palette]
-	
-	mov si, dx
-	shl dx, 1	
-	add dx, si
-	add r10, rdx
-	
-	mov r12, 255
-	mov [r9], r12
-	add r9, 1
-	
-	add r10, 2
-	mov r11, [r10]
-	mov [r9], r11
-	add r9, 1
-	
-	sub r10, 1
-	mov r11, [r10]
-	mov [r9], r11
-	add r9, 1
-	
-	sub r10, 1
-	mov r11, [r10]
-	mov [r9], r11
-	add r9, 1
-	
-	;add r9, 8
 
-	jmp in_loop
+colorPixel:
+	mov r13, r8
+	imul r12, 3
 	
+	add r13, r12
+	mov [rdi], r13
+	
+	add r13, 1
+	add rdi, 2
+	mov [rdi], r13
+	
+	add r13, 1
+	add rdi, 2
+	mov [rdi], r13 
+	
+	add rdi, 2
+	
+	jmp x_loop
+
+
 end:
-	pop rdx
-	pop rcx
-	pop rbx
-	pop rax
 	pop rbp
-	
 	ret
-	
-	
-
-			;for (int y = 0; y < Height; ++y)
-			;	for (int x = 0; x < Width; ++x)
-			;	{
-					
-			;		std::complex<double> z( 
-			;			1.0 * (x - resolution_offset + px_offset.x) / Height * 4.0 * zoom - 2.0 * zoom, 
-			;			1.0 * (y + px_offset.y) 										/ Height * 4.0 * zoom - 2.0 * zoom
-			;		);
-					
-			 
-			;		cnt = 0;
-			;		while (cnt < PaletteSize)
-			;		{
-			;			z = z * z + c;
-			;			if (abs(z) > 2.0)
-			;				break;
-			;			++cnt;
-			;		}
-					
-			;		pixels[y*Width + x] = 255 | ( palette[cnt][2] << 8) | ( palette[cnt][1] << 16) | ( palette[cnt][0] << 24);
-					

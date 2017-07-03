@@ -22,9 +22,11 @@ int pitch = 3*SCREEN_WIDTH;
 
 //Starts up SDL and creates window
 bool init();
-
+ 
 //Frees media and shuts down SDL
 void close();
+
+extern "C" void asmfunc(double , double , double , int * , int , int , int , int *, double, double );
 
 
 SDL_Window* gWindow = NULL;
@@ -85,7 +87,15 @@ int main( int argc, char* args[] )
 		SDL_Texture * texture = NULL;
 		//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
 		double x_offset = 0, y_offset = 0;
-
+		
+		int palette[32*3];
+		for(int i=0; i < 32; i++)
+		{
+			palette[3*i+0] = (8*i)/(double)255;
+			palette[3*i+1] = (128-4*i)/(double)255;
+			palette[3*i+2] = (255-8*i)/(double)255;
+		}
+		
 		while( !quit )
 		{
 			//Handle events on queue
@@ -132,16 +142,23 @@ int main( int argc, char* args[] )
 		
 			int n, iterationsLimit = 40;
 			
+			cout << (int*)pixels << " <- pizels | palette -> " << &palette << endl;
+			int x = 0, y = 0;
+			cout <<  1.0 * (x + x_offset/zoom - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2) / SCREEN_HEIGHT * 4.0 * zoom - 2.0 * zoom << endl;
+			cout << -1.0 * (y + y_offset/zoom)/ SCREEN_HEIGHT * 4.0 * zoom + 2.0 * zoom << endl;
+			//asmfunc(c.real(), c.imag(), zoom, (int*)pixels, SCREE, 55, 66, palette, x_offset/zoom, y_offset/zoom);
+			asmfunc(c.real(), c.imag(), zoom, (int*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, iterationsLimit, palette, x_offset/zoom, y_offset/zoom);
+			/*
 			for(int y = 0; y < SCREEN_HEIGHT; y++)
 			{
 				for(int x = 0; x < SCREEN_WIDTH; x++)
 				{
-					//double coordx = -1.5 + (double)x/SCREEN_WIDTH * 3;
 					double coordx = 1.0 * (x + x_offset/zoom - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2) / SCREEN_HEIGHT * 4.0 * zoom - 2.0 * zoom;
-					//double coordy = 1.5 - (double)y/SCREEN_HEIGHT * 3;
+					
+					
 					double coordy = -1.0 * (y + y_offset/zoom)/ SCREEN_HEIGHT * 4.0 * zoom + 2.0 * zoom;
 					z = {coordx,coordy};
-					//std::cout << "next pixel" << std::endl;
+					
 					for(n = 0; n < iterationsLimit; n++)
 					{
 						z = pow(z, 2) + c;
@@ -156,7 +173,8 @@ int main( int argc, char* args[] )
 					pixels[(y*SCREEN_WIDTH + x)*3+2] = blue;
 					 
 				}
-			}
+			}*/
+			
 			//SDL_UpdateTexture(texture, NULL, pixels,  SCREEN_WIDTH * 3 * sizeof(Uint8));
 			//TO DO: update surface -> update texture
 			cout << "Calc end" << endl;
