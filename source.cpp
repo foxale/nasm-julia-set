@@ -20,7 +20,7 @@ Uint32 bmask = 0xff0000;
 int depth = 24;
 int pitch = 3*SCREEN_WIDTH;
 
-int iterationsLimit = 256;
+int iterationsLimit = 64;
 
 //Starts up SDL and creates window
 bool init();
