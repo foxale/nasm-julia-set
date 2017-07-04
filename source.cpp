@@ -20,7 +20,7 @@ Uint32 bmask = 0xff0000;
 int depth = 24;
 int pitch = 3*SCREEN_WIDTH;
 
-int iterationsLimit = 32;
+int iterationsLimit = 256;
 
 //Starts up SDL and creates window
 bool init();
@@ -90,12 +90,14 @@ int main( int argc, char* args[] )
 		//memset(pixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3 * sizeof(Uint8)); 
 		double x_offset = 0, y_offset = 0;
 		
-		Uint8 * palette = new Uint8[iterationsLimit*3];
-		for(int i=0; i < iterationsLimit; i++)
+		Uint8 * palette = new Uint8[(iterationsLimit+1)*3];
+		for(int i=0; i <= iterationsLimit; i++)
 		{
-			palette[3*i+0] = (8*i)/(double)255;
-			palette[3*i+1] = (128-4*i)/(double)255;
-			palette[3*i+2] = (255-8*i)/(double)255;
+			//palette[3*i+0] = (255*i/iterationsLimit)%256;
+			//palette[3*i+1] = i*i / (iterationsLimit*iterationsLimit) * 255 %256;
+			palette[3*i+0] = i < 2 * iterationsLimit / 3 ? i * 255 * 3 / (2 * iterationsLimit) : 255;
+			palette[3*i+1] = i < iterationsLimit / 3 ? 0 : (i - iterationsLimit / 3) * 255 * 3 / (2 * iterationsLimit);
+			palette[3*i+2] = 0;
 		}
 		
 		while( !quit )

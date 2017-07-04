@@ -1,9 +1,8 @@
 ;nasm_loop.asm
 ;asmfunc(double c_x, double c_y, double zoom, U32* pixels, int width, int height, int limit, int * palette, int x_offset/zoom, int y_offset/zoom)
 ;	 		XMM0	    XMM1	      XMM2	      RDI	  		RSI       RDX  	    RCX		    	R8				 XMM3 		XMM4			
-;arguments in RDI, RSI, RDX, RCX, R8, and R9
-; R9 - W-H / 2
-; R10 - x, R11 - y;
+; R9 = (W-H)/2
+; R10 = x counter, R11 = y counter;
 
 section .text
 global asmfunc
@@ -13,15 +12,19 @@ asmfunc:
 	push rbp
 	mov rbp, rsp	
 	
+	; r9 = (W-H)/2
 	mov r9, rsi
 	sub r9, rdx
 	sar r9, 1
 	
+	; xmm6 = (double)Height 
 	cvtsi2sd xmm6, rdx
 	
+	; xmm9 = 2.0 
 	mov r13, 2
 	cvtsi2sd xmm9, r13
 	
+	; xmm10 = 4.0
 	mov r13, 4
 	cvtsi2sd xmm10, r13
 	
@@ -110,15 +113,20 @@ colorPixel:
 	mov r13, r8
 	imul r12, 3
 	
+	; set pointer to palette[n*3]
 	add r13, r12
+	
+	; red
 	mov r14b, [r13]
 	mov [rdi], r14b
 	
+	; green
 	add r13, 1
 	add rdi, 1
 	mov r14b, [r13]
 	mov [rdi], r14b
 	
+	; blue
 	add r13, 1
 	add rdi, 1
 	mov r14b, [r13]
