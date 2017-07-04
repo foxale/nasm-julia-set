@@ -6,7 +6,7 @@ COMPILER_FLAGS = -w -g
 
 LINKER_FLAGS = -lSDL2
 
-OBJ_NAME = sdltest
+OBJ_NAME = sdltest.exe
 
 all: nasm_loop.o $(OBJS) 
 	$(CC) nasm_loop.o $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME) 
