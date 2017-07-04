@@ -9,7 +9,11 @@ global asmfunc
 
 
 asmfunc:
+	; registers that must be saved in 64bit Unix: RBX, RBP, R12-R15
 	push rbp
+	push r12
+	push r13
+	push r14
 	mov rbp, rsp	
 	
 	; r9 = (W-H)/2
@@ -28,25 +32,11 @@ asmfunc:
 	mov r13, 4
 	cvtsi2sd xmm10, r13
 	
-	mov r11, -1
+	xor r10, r10
+	xor r11, r11
 	
-y_loop:
 	; r10 - x counter
 	; r11 - y counter
-	
-	; for (int y = 0; y < Height; ++y)
-	add r11, 1
-	cmp r11, rdx
-	je end
-	
-	mov r10, -1
-	
-x_loop:
-
-	;for (int x = 0; x < Width; ++x)
-	add r10, 1
-	cmp r10, rsi
-	je y_loop
 
 def_z:
 	; r12 = x - (width - height) / 2 
@@ -78,8 +68,7 @@ def_z:
 	; z.real() is in xmm5
 	; z.imag() is in xmm8
 	
-	xor r12, r12
-	jmp check_condition
+	mov r12, -1
 	
 julia_iteration:
 	add r12, 1
@@ -97,8 +86,7 @@ julia_iteration:
 	mulsd xmm5, xmm5
 	subsd xmm5, xmm7
 	addsd xmm5, xmm0
-
-check_condition:
+	
 	; Re^2 + Im^2 is in xmm7
 	movsd xmm7, xmm8
 	mulsd xmm7, xmm7
@@ -136,9 +124,22 @@ colorPixel:
 	
 	add rdi, 1
 	
-	jmp x_loop
+x_loop:
+	;for (int x = 0; x < Width; ++x)
+	add r10, 1
+	cmp r10, rsi
+	jl def_z
+
+y_loop:
+	; for (int y = 0; y < Height; ++y)
+	mov r10, 0
+	add r11, 1
+	cmp r11, rdx
+	jl def_z 
 
 end:
+	pop r14
+	pop r13
+	pop r12
 	pop rbp
-	VZEROUPPER
 	ret
