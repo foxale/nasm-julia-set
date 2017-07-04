@@ -78,7 +78,8 @@ def_z:
 	; z.real() is in xmm5
 	; z.imag() is in xmm8
 	
-	mov r12, -1
+	xor r12, r12
+	jmp check_condition
 	
 julia_iteration:
 	add r12, 1
@@ -96,7 +97,8 @@ julia_iteration:
 	mulsd xmm5, xmm5
 	subsd xmm5, xmm7
 	addsd xmm5, xmm0
-	
+
+check_condition:
 	; Re^2 + Im^2 is in xmm7
 	movsd xmm7, xmm8
 	mulsd xmm7, xmm7
@@ -138,4 +140,5 @@ colorPixel:
 
 end:
 	pop rbp
+	VZEROUPPER
 	ret
