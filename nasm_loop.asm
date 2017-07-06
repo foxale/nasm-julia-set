@@ -14,23 +14,58 @@ asmfunc:
 	push r12
 	push r13
 	push r14
-	mov rbp, rsp	
+	mov rbp, rsp
+	
+	cvtpd2ps xmm0, xmm0
+	unpcklps xmm0, xmm0
+	unpcklps xmm0, xmm0
+	
+	cvtpd2ps xmm1, xmm1
+	unpcklps xmm1, xmm1
+	unpcklps xmm1, xmm1
+	
+	cvtpd2ps xmm2, xmm2
+	unpcklps xmm2, xmm2
+	unpcklps xmm2, xmm2
+	
+	cvtpd2ps xmm3, xmm3
+	unpcklps xmm3, xmm3
+	unpcklps xmm3, xmm3
+	
+	cvtpd2ps xmm4, xmm4
+	unpcklps xmm4, xmm4
+	unpcklps xmm4, xmm4
+
+	
+	; rcx = width / 4	
+	shr rcx, 2
 	
 	; r9 = (W-H)/2
 	mov r9, rsi
 	sub r9, rdx
 	sar r9, 1
+	cvtsi2ss xmm11, r9
+	unpcklps xmm11, xmm11
+	unpcklps xmm11, xmm11
+	
 	
 	; xmm6 = (double)Height 
-	cvtsi2sd xmm6, rdx
+	cvtsi2ss xmm6, rdx
+	unpcklps xmm6, xmm6
+	unpcklps xmm6, xmm6
 	
+	; a moze by tak addps ? 
 	; xmm9 = 2.0 
 	mov r13, 2
-	cvtsi2sd xmm9, r13
+	cvtsi2ss xmm9, r13
+	unpcklps xmm9, xmm9
+	unpcklps xmm9, xmm9
 	
 	; xmm10 = 4.0
 	mov r13, 4
-	cvtsi2sd xmm10, r13
+	cvtsi2ss xmm10, r13
+	unpcklps xmm10, xmm10
+	unpcklps xmm10, xmm10
 	
 	xor r10, r10
 	xor r11, r11
@@ -38,33 +73,56 @@ asmfunc:
 	; r10 - x counter
 	; r11 - y counter
 
+	; xmm12 - x'y
+	
+	; xmm12 = 0 1 2 3
+	; zamiast tego sprawdzic hex i zrobic movq rax
+	mov r13, 1
+	cvtsi2ss xmm12, r13
+	shufps xmm12, xmm12, 0x39
+	
+	shl r13, 1
+	cvtsi2ss xmm12, r13
+	shufps xmm12, xmm12, 0x39
+	
+	inc r13
+	cvtsi2ss xmm12, r13
+	shufps xmm12, xmm12, 0x39
+	
+	; xmm12+4, xmm13+1 NA KONIEC
+	
 def_z:
 	; r12 = x - (width - height) / 2 
-	mov r12, r10
-	sub r12, r9
+	shufps xmm5, xmm12, 0xE4
+	subps xmm5, xmm11
+	
 	; xmm5 = (x - (width - height) / 2 + x_offset/zoom ) / height
-	cvtsi2sd xmm5, r12
-	addsd xmm5, xmm3
-	divsd xmm5, xmm6
+	addps xmm5, xmm3
+	divps xmm5, xmm6
 	; xmm5 = (x - (width - height) / 2 + x_offset/zoom ) / height * 4.0
-	mulsd xmm5, xmm10
+	mulps xmm5, xmm10
 	; xmm5 = ((x - (width - height) / 2 + x_offset/zoom ) / height * 4.0 - 2.0 ) * zoom
-	subsd xmm5, xmm9
-	mulsd xmm5, xmm2
+	subps xmm5, xmm9
+	mulps xmm5, xmm2
 	
 	
 	; xmm8 = y + y_offset/zoom
-	cvtsi2sd xmm8, r11
-	addsd xmm8, xmm4
+	cvtsi2ss xmm8, rdx
+	
+	addss xmm8, xmm4
 	; xmm8 = ( y + y_offset/zoom ) / height * 4.0
-	divsd xmm8, xmm6
-	mulsd xmm8, xmm10
+	divss xmm8, xmm6
+	
+	
+	addss xmm8, xmm8
+	addss xmm8, xmm8
+	
 	; xmm7 = (2.0 - ( y + y_offset/zoom ) / height * 4.0 ) * zoom
-	movsd xmm7, xmm9
-	subsd xmm7, xmm8
-	mulsd xmm7, xmm2
-
-	movsd xmm8, xmm7
+	movss xmm7, xmm9
+	subss xmm7, xmm8
+	mulss xmm7, xmm2
+	shufps xmm7, xmm7, 0x00
+	movaps xmm8, xmm7
 	; z.real() is in xmm5
 	; z.imag() is in xmm8
 	
