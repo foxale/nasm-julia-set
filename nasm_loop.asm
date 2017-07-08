@@ -55,6 +55,7 @@ asmfunc:
 	unpcklps xmm6, xmm6
 	
 	; a moze by tak addps ? 
+	; zamiast tego to samo co w 0 1 2 3 
 	; xmm9 = 2.0 
 	mov r13, 2
 	cvtsi2ss xmm9, r13
@@ -76,7 +77,7 @@ asmfunc:
 	; xmm12 - x'y
 	
 	; xmm12 = 0 1 2 3
-	; zamiast tego sprawdzic hex i zrobic movq rax
+	; zamiast tego sprawdzic hex i zrobic movq rax // ew wypelnic jedynkami pcmpeqd xmm0, xmm0 i zrobic psrld   xmm0, 30   ; 3 (32-bit)
 	mov r13, 1
 	cvtsi2ss xmm12, r13
 	shufps xmm12, xmm12, 0x39
@@ -134,23 +135,53 @@ julia_iteration:
 	je colorPixel
 	
 	; Im(z*z+c) is in xmm8
-	movsd xmm7, xmm8
-	mulsd xmm8, xmm5
-	mulsd xmm8, xmm9
-	addsd xmm8, xmm1
+	shufps xmm7, xmm8, 0xE4
+	mulps xmm8, xmm5
+	addps xmm8, xmm8
+	addps xmm8, xmm1
 	
 	; Re(z*z+c) is in xmm5
-	mulsd xmm7, xmm7
-	mulsd xmm5, xmm5
-	subsd xmm5, xmm7
-	addsd xmm5, xmm0
+	mulps xmm7, xmm7
+	mulps xmm5, xmm5
+	subps xmm5, xmm7
+	addps xmm5, xmm0
 	
 	; Re^2 + Im^2 is in xmm7
-	movsd xmm7, xmm8
-	mulsd xmm7, xmm7
-	movsd xmm11, xmm5
-	mulsd xmm11, xmm11
-	addsd xmm7, xmm11
+	shufps xmm7, xmm8, 0xE4
+	mulps xmm7, xmm7
+	shufps xmm11, xmm5, 0xE4
+	mulps xmm11, xmm11
+	addps xmm7, xmm11
+	 
+	; packed single precision checking if > 4
+	
+	; copy abs to xmm13
+	shufps xmm13, xmm7, 0xE4
+	; compare with 4, so that in xmm13 there are only 11..1 or 00..0
+	cmpps xmm13, xmm10, 6
+	ptest xmm13, xmm13
+	jz julia_iteration
+	
+	; if at least one element is above 4:
+
+	xor xmm14, xmm14
+	
+	
+	
+	; fill xmm15 with n's or 0's
+	
+	
+	
+	; negate xmm13
+	pxor xmm14, xmm14
+	subps xmm13, xmm14
+	
+	
+	
+	
+	
+	
+	
 	
 	comisd xmm7, xmm10
 	jb julia_iteration
