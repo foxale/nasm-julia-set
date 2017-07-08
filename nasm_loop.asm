@@ -47,7 +47,8 @@ def_z:
 	addsd xmm5, xmm3
 	divsd xmm5, xmm6
 	; xmm5 = (x - (width - height) / 2 + x_offset/zoom ) / height * 4.0
-	mulsd xmm5, xmm10
+	addsd xmm5, xmm5
+	addsd xmm5, xmm5
 	; xmm5 = ((x - (width - height) / 2 + x_offset/zoom ) / height * 4.0 - 2.0 ) * zoom
 	subsd xmm5, xmm9
 	mulsd xmm5, xmm2
@@ -58,7 +59,8 @@ def_z:
 	addsd xmm8, xmm4
 	; xmm8 = ( y + y_offset/zoom ) / height * 4.0
 	divsd xmm8, xmm6
-	mulsd xmm8, xmm10
+	addsd xmm8, xmm8
+	addsd xmm8, xmm8
 	; xmm7 = (2.0 - ( y + y_offset/zoom ) / height * 4.0 ) * zoom
 	movsd xmm7, xmm9
 	subsd xmm7, xmm8
@@ -101,7 +103,7 @@ colorPixel:
 	; n in r12
 	; &palette in r13
 	mov r13, r8
-	imul r12, 3
+	lea r12, [r12+2*r12]
 	
 	; set pointer to palette[n*3]
 	add r13, r12
