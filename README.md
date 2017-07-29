@@ -1,8 +1,8 @@
 # nasm-julia-set
 
-Julia set generator for x86-64 in NASM.
+Julia set generator for x86-64 in NASM and C++.
 
-https://pl.wikipedia.org/wiki/Zbi%C3%B3r_Julii
+https://en.wikipedia.org/wiki/Julia_set
 
 ![Screenshot](https://image.ibb.co/hset75/julia_set_generator.png)
 
