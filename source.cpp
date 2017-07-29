@@ -128,7 +128,7 @@ int main( int argc, char* args[] )
 
 			
 			cout << "x_off: " << x_offset << " y_off: " << y_offset << endl;
-			complex<double> z;
+
 			complex<double> c(-0.835 -0.232i);
 		
 			int n;
