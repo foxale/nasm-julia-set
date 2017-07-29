@@ -1,7 +1,3 @@
-/*This source code copyrighted by Lazy Foo' Productions (2004-2015)
-and may not be redistributed without written permission.*/
-
-//Using SDL, standard IO, and strings
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <string>
@@ -10,7 +6,7 @@ and may not be redistributed without written permission.*/
 #include <cmath>
 
 using namespace std;
-//Screen dimension constants
+
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
@@ -22,10 +18,7 @@ int pitch = 3*SCREEN_WIDTH;
 
 int iterationsLimit = 64;
 
-//Starts up SDL and creates window
 bool init();
- 
-//Frees media and shuts down SDL
 void close();
 
 extern "C" void asmfunc(double , double , double , int * , int , int , int , int *, double, double );
@@ -36,10 +29,8 @@ SDL_Window* gWindow = NULL;
 
 bool init()
 {
-	//Initialization flag
 	bool success = true;
 
-	//Initialize SDL
 	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
@@ -47,8 +38,7 @@ bool init()
 	}
 	else
 	{
-		//Create window
-		gWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+		gWindow = SDL_CreateWindow( "Julia Set Generator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
 		if( gWindow == NULL )
 		{
 			printf( "Window could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -72,7 +62,6 @@ void close()
 
 int main( int argc, char* args[] )
 {
-	//Start up SDL and create window
 	if( !init() )
 	{
 		printf( "Failed to initialize!\n" );
@@ -102,10 +91,8 @@ int main( int argc, char* args[] )
 		
 		while( !quit )
 		{
-			//Handle events on queue
 			while( SDL_PollEvent( &event ) != 0 )
 			{
-				//User requests quit
 				if( event.type == SDL_QUIT )
 				{
 					quit = true;
@@ -150,7 +137,7 @@ int main( int argc, char* args[] )
 			int x = 0, y = 0;
 			cout <<  1.0 * (x + x_offset/zoom - (SCREEN_WIDTH - SCREEN_HEIGHT ) /2) / SCREEN_HEIGHT * 4.0 * zoom - 2.0 * zoom << endl;
 			cout << -1.0 * (y + y_offset/zoom)/ SCREEN_HEIGHT * 4.0 * zoom + 2.0 * zoom << endl;
-			//asmfunc(c.real(), c.imag(), zoom, (int*)pixels, SCREE, 55, 66, palette, x_offset/zoom, y_offset/zoom);
+
 			asmfunc(c.real(), c.imag(), zoom, (int*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, iterationsLimit, (int*)palette, x_offset/zoom, y_offset/zoom);
 			
 			/*
