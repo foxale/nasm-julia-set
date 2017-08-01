@@ -14,6 +14,6 @@ https://en.wikipedia.org/wiki/Julia_set
 
 ## Dependencies
 
-- [NASM][nasm], with support for `elf64` output format
+- [NASM], with support for `elf64` output format
 - Linker capable of emulating `elf64`
 - Linux / GNU x64
